@@ -171,3 +171,23 @@ for status, count in classification_counts.items():
     print(f"{status}: {count}")
 
 print("\nTotal Transaction IDs:", len(grouped_transactions))
+
+
+# Analyze ledger currencies
+
+print("\nLedger Currency Analysis:")
+
+currency_counts = {}
+
+for record in ledger:
+    currency = record["currency"].strip()
+
+    currency_counts[currency] = currency_counts.get(currency, 0) + 1
+
+for currency, count in currency_counts.items():
+    print(currency, ":", count)
+
+print("\nTotal Unique Currencies:", len(currency_counts))
+
+
+
