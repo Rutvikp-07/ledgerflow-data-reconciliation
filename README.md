@@ -1,510 +1,343 @@
+# LedgerFlow – Financial Data Quality and Reconciliation System
 
+## 1. Project Overview
 
-\# LedgerFlow – Financial Data Reconciliation System
+LedgerFlow is a Python-based financial data engineering project that processes company ledger transactions and bank statement records.
 
+It provides an end-to-end pipeline for data ingestion, normalization, data quality validation, duplicate classification, anomaly detection, transaction reconciliation, reporting, and dashboard-based exploration.
 
+The project is designed to make financial discrepancies easier to identify, explain, and investigate.
 
-\## 1. Project Overview
+## 2. Key Features
 
+- Load company ledger data from CSV.
+- Load bank statement data from JSON.
+- Upload custom CSV and JSON files through the dashboard.
+- Normalize transaction IDs, dates, categories, and monetary values.
+- Validate records using configurable JSON quality rules.
+- Classify records as CLEAN, FLAGGED, or REJECTED.
+- Detect exact and conflicting duplicate transactions.
+- Detect explainable anomalies using configurable rules.
+- Reconcile ledger and bank transactions using primary and secondary matching.
+- Identify missing, unmatched, and inconsistent transactions.
+- Generate quality, anomaly, reconciliation, and summary reports.
+- Explore results through an interactive Streamlit dashboard.
+- Download generated reports.
 
+## 3. Technology Stack
 
-LedgerFlow is a Python-based financial data reconciliation project that compares company ledger transactions with bank statement records.
+- Python
+- CSV and JSON
+- Decimal
+- Collections
+- Streamlit
+- HTML
+- Git and GitHub
+- Python unittest
 
+The core data processing and testing logic primarily uses Python's standard library. Streamlit is used for the dashboard.
 
-
-The system processes two independent data sources, profiles their quality, identifies duplicates and missing records, and classifies transactions based on reconciliation results.
-
-
-
-The goal is to make financial discrepancies easier to identify, investigate, and audit.
-
-
-
-\## 2. Key Features
-
-
-
-\- Load company ledger data from CSV.
-
-\- Load bank statement data from JSON.
-
-\- Profile source data and identify missing values.
-
-\- Detect exact and conflicting duplicate ledger transaction IDs.
-
-\- Detect duplicate bank references.
-
-\- Normalize transaction amounts using Python Decimal.
-
-\- Match transactions using ledger references.
-
-\- Identify amount, account, and currency mismatches.
-
-\- Identify missing and unlinked transactions.
-
-\- Flag duplicate records for investigation.
-
-\- Generate detailed reconciliation and summary CSV reports.
-
-
-
-\## 3. Technology Stack
-
-
-
-\- Python
-
-\- CSV
-
-\- JSON
-
-\- Decimal
-
-\- Collections
-
-\- Git and GitHub
-
-
-
-The project currently uses Python's standard library and does not require third-party packages.
-
-
-
-\## 4. Project Structure
-
-
+## 4. Project Structure
 
 ```text
-
 LedgerFlow/
-
-│
-
 ├── config/
-
-│
-
+│   └── quality_rules.json
 ├── data/
-
 │   ├── raw/
-
 │   └── processed/
-
-│
-
 ├── outputs/
-
-│   ├── reconciliation\_results.csv
-
-│   └── reconciliation\_summary.csv
-
-│
-
 ├── logs/
-
-│
-
 ├── src/
-
 │   └── ledgerflow/
-
 │       ├── ingestion.py
-
-│       ├── profile\_ledger.py
-
-│       ├── profile\_bank.py
-
-│       └── reconciliation.py
-
-│
-
+│       ├── normalization.py
+│       ├── quality.py
+│       ├── duplicates.py
+│       ├── quality_report.py
+│       ├── anomalies.py
+│       ├── reconciliation.py
+│       ├── exports.py
+│       ├── summaries.py
+│       └── pipeline.py
 ├── tests/
-
-├── scripts/
-
+├── app.py
+├── run.py
+├── requirements.txt
 ├── .gitignore
-
 └── README.md
-
 ```
 
+## 5. Data Sources
 
+### Company Ledger (CSV)
 
-\## 5. Data Sources
+Contains company transaction information, including:
 
+- txn_id
+- account_id
+- txn_date
+- amount
+- currency
+- category
+- merchant
+- description
 
+### Bank Statement (JSON)
 
-\### Company Ledger (CSV)
+Contains bank transaction information, including:
 
-
-
-Contains company transaction information.
-
-
-
-Main fields:
-
-
-
-\- txn\_id
-
-\- account\_id
-
-\- txn\_date
-
-\- amount
-
-\- currency
-
-\- category
-
-\- merchant
-
-\- description
-
-
-
-\### Bank Statement (JSON)
-
-
-
-Contains bank transaction information.
-
-
-
-Main fields:
-
-
-
-\- bank\_ref
-
-\- ledger\_ref
-
-\- account
-
-\- posted\_date
-
-\- amount
-
-\- currency
-
-\- memo
-
-
+- bank_ref
+- ledger_ref
+- account
+- posted_date
+- amount
+- currency
+- memo
 
 The two sources are processed independently. Their record counts are not expected to be identical.
 
+## 6. Data Quality and Validation
 
+LedgerFlow validates records using configurable rules stored in:
 
-\## 6. Data Quality Profiling
+`config/quality_rules.json`
 
+Validation includes:
 
+- Missing transaction IDs.
+- Missing account identifiers.
+- Missing transaction dates.
+- Invalid dates.
+- Invalid monetary values.
+- Unsupported currencies.
+- Missing transaction categories.
 
-The source profiling stage examines:
+Records are classified into three categories:
 
+- CLEAN – Records that pass validation.
+- FLAGGED – Records with warnings that require attention.
+- REJECTED – Records with validation errors.
 
+### Current sample dataset results
 
-\- Total records and columns.
+| Metric | Count |
+|---|---:|
+| Total ledger records | 1,232 |
+| Clean records | 1,207 |
+| Flagged records | 16 |
+| Rejected records | 9 |
 
-\- Data types.
+## 7. Duplicate Classification
 
-\- Missing values.
+LedgerFlow identifies duplicate transaction IDs and distinguishes between:
 
-\- Duplicate transaction identifiers.
+- Exact duplicates – Additional identical copies are removed.
+- Conflicting duplicates – Records sharing an ID but containing different data are preserved for investigation.
 
-\- Duplicate bank references.
+### Current sample dataset results
 
-\- Date formats.
+| Metric | Count |
+|---|---:|
+| Exact duplicate groups | 10 |
+| Exact duplicate rows removed | 10 |
+| Conflicting duplicate groups | 4 |
+| Conflicting duplicate rows | 8 |
 
-\- Amount validity.
+Conflicting duplicates are retained rather than silently discarded.
 
-\- Currency distribution.
+## 8. Anomaly Detection
 
-\- Unlinked bank transactions.
+The anomaly detection module applies configurable rules to identify transactions that may require investigation.
 
+Current rules include:
 
+- High-value transactions.
+- Future-dated transactions.
+- Weekend transactions.
 
-\### Profiling Findings
+Each detected anomaly includes its transaction ID, rule, severity, description, and explanation.
 
+An anomaly is a review indicator, not proof of fraud or an invalid transaction.
 
+## 9. Reconciliation Logic
 
-Company Ledger:
+LedgerFlow compares normalized ledger and bank records.
 
-\- Total records: 1,232
+### Primary matching
 
-\- Unique transaction IDs: 1,218
+Transactions are first matched using their ledger reference.
 
-\- Duplicate transaction ID groups: 14
+### Secondary matching
 
-\- Exact duplicate groups: 10
+When a usable ledger reference is unavailable, the system can search for a unique candidate using:
 
-\- Conflicting duplicate groups: 4
+- Account information.
+- Transaction amount.
+- Currency.
+- Merchant or memo information.
+- Transaction date within the configured tolerance.
 
+Ambiguous candidates are not automatically treated as matches.
 
+The reconciliation engine also identifies:
 
-Bank Statement:
+- Amount mismatches.
+- Account mismatches.
+- Missing ledger transactions.
+- Missing bank transactions.
+- Explicit bank-only transactions.
+- Unlinked bank transactions.
+- Transactions requiring investigation.
 
-\- Total records: 1,180
+Every non-matched result includes an explanation in the report.
 
-\- Missing ledger references: 66
+Amounts are parsed using Python's Decimal to avoid floating-point comparison issues.
 
-\- Explicit bank-only records: 25
+## 10. Current Reconciliation Results
 
-\- Other unlinked records: 41
-
-\- Duplicate bank references: 0
-
-
-
-\## 7. Reconciliation Logic
-
-
-
-The reconciliation engine uses transaction references to identify corresponding records.
-
-
-
-It performs the following checks:
-
-
-
-1\. Identifies bank transactions without ledger references.
-
-2\. Identifies explicitly marked bank-only transactions.
-
-3\. Checks for duplicate bank references.
-
-4\. Checks whether a bank reference exists in the company ledger.
-
-5\. Flags duplicate ledger transaction IDs.
-
-6\. Compares transaction amounts.
-
-7\. Compares account identifiers.
-
-8\. Compares currencies.
-
-9\. Identifies ledger transactions missing from the bank statement.
-
-
-
-Amounts are converted to Decimal before comparison to avoid floating-point precision problems.
-
-
-
-Duplicate ledger candidates are included in the detailed report for investigation.
-
-
-
-\## 8. Reconciliation Results
-
-
-
-The current execution produced the following results:
-
-
+The current sample dataset produced the following results:
 
 | Status | Count |
-
 |---|---:|
+| ACCOUNT_MISMATCH | 4 |
+| AMOUNT_MISMATCH | 10 |
+| EXPLICIT_BANK_ONLY | 25 |
+| MATCHED | 1,088 |
+| MISSING_IN_BANK | 63 |
+| MISSING_IN_LEDGER | 8 |
+| NEEDS_INVESTIGATION | 4 |
+| SECONDARY_MATCHED | 40 |
+| UNLINKED_BANK_TRANSACTION | 1 |
+| **Total report rows** | **1,243** |
 
-| MATCHED | 1,079 |
+These are reconciliation report rows, not a count of unique transactions in either source.
 
-| AMOUNT\_MISMATCH | 10 |
+## 11. Generated Reports
 
-| ACCOUNT\_MISMATCH | 4 |
+### Processed data
 
-| INVALID\_AMOUNT | 4 |
+- `data/processed/cleaned_ledger.csv`
+- `data/processed/cleaned_ledger.json`
+- `data/processed/rejected_ledger.json`
 
-| MISSING\_IN\_BANK | 107 |
+### Quality reports
 
-| MISSING\_IN\_LEDGER | 5 |
+- `outputs/quality_report.json`
+- `outputs/quality_report.csv`
 
-| EXPLICIT\_BANK\_ONLY | 25 |
+### Anomaly report
 
-| UNLINKED\_BANK\_TRANSACTION | 41 |
+- `outputs/anomaly_report.csv`
 
-| NEEDS\_INVESTIGATION | 16 |
+### Reconciliation reports
 
-| \*\*Total report rows\*\* | \*\*1,291\*\* |
+- `outputs/reconciliation_results.csv`
+- `outputs/reconciliation_summary.csv`
 
+### Summary reports
 
+- `outputs/summary_by_date.csv`
+- `outputs/summary_by_category.csv`
+- `outputs/summary_by_status.csv`
 
-The total report row count is higher than either source count because the report also includes ledger-side transactions that have no corresponding bank record.
+## 12. Streamlit Dashboard
 
+The project includes a dashboard with the following pages:
 
+- **Overview:** Key pipeline metrics and dataset summary.
+- **Data Quality:** Validation results and quality breakdown.
+- **Reconciliation:** Matching results and transaction discrepancies.
+- **Anomalies:** Detected anomalies and explanations.
+- **Data Explorer:** Explore transaction records.
+- **Downloads:** Download generated reports.
 
-The status counts represent reconciliation report rows, not unique source transactions.
+The dashboard supports uploading a custom company ledger CSV and bank statement JSON file.
 
+## 13. How to Run
 
-
-\## 9. Generated Reports
-
-
-
-\### reconciliation\_results.csv
-
-
-
-Contains transaction-level reconciliation details, including:
-
-
-
-\- Bank reference
-
-\- Ledger reference
-
-\- Ledger amount
-
-\- Bank amount
-
-\- Account information
-
-\- Transaction dates
-
-\- Currency
-
-\- Duplicate ledger candidates
-
-\- Reconciliation status
-
-\- Investigation notes
-
-
-
-\### reconciliation\_summary.csv
-
-
-
-Contains the count of records classified under each reconciliation status.
-
-
-
-\## 10. How to Run
-
-
-
-\### Step 1: Clone the repository
-
-
+### Step 1: Clone the repository
 
 ```bash
-
 git clone https://github.com/Rutvikp-07/ledgerflow-data-reconciliation.git
-
 ```
 
-
-
-\### Step 2: Navigate to the project
-
-
+### Step 2: Navigate to the project
 
 ```bash
-
 cd ledgerflow-data-reconciliation
-
 ```
 
-
-
-\### Step 3: Create and activate a virtual environment
-
-
+### Step 3: Create and activate a virtual environment
 
 Windows:
 
-
-
-```bash
-
+```cmd
 python -m venv .venv
-
-.venv\\Scripts\\activate
-
+.venv\Scripts\activate
 ```
 
+### Step 4: Install dependencies
 
-
-\### Step 4: Add the input files
-
-
-
-Place the source files in:
-
-
-
-```text
-
-data/raw/
-
+```cmd
+python -m pip install -r requirements.txt
 ```
 
+### Step 5: Run the complete data pipeline
 
+From the project root:
 
-Expected filenames:
-
-
-
-\- company\_ledger.csv
-
-\- bank\_statement.json
-
-
-
-\### Step 5: Run reconciliation
-
-
-
-Navigate to:
-
-
-
-```bash
-
-cd src/ledgerflow
-
+```cmd
+python run.py
 ```
 
+### Step 6: Launch the dashboard
 
-
-Execute:
-
-
-
-```bash
-
-python reconciliation.py
-
+```cmd
+streamlit run app.py
 ```
 
+### Step 7: Run automated tests
 
+```cmd
+python -m unittest discover -s tests -v
+```
 
-The generated reports will be available in the `outputs/` directory.
+## 14. Testing and Reliability
 
+LedgerFlow includes automated unit and integration tests covering:
 
+- Data ingestion.
+- Data normalization.
+- Data quality validation.
+- Duplicate classification.
+- Transaction reconciliation.
+- Complete pipeline execution.
 
-\## 11. Current Limitations
+The current test suite contains **32 passing tests**.
 
+The pipeline has also been checked for deterministic execution by comparing SHA-256 hashes of generated output files across consecutive runs.
 
+## 15. Current Limitations
 
-\- Unlinked bank transactions are identified but are not automatically matched using secondary fields.
+- The sample dataset is used for the default pipeline execution.
+- Anomaly detection is rule-based rather than machine-learning-based.
+- Ambiguous secondary matching candidates require investigation.
+- Generated reports are refreshed when the pipeline runs; previous run outputs are not maintained as a separate audit history.
+- Parquet export is not currently part of the required export workflow.
 
-\- Transaction dates are included in reports but are not currently used as a reconciliation matching condition.
+## 16. Future Improvements
 
-\- Duplicate ledger transactions require manual investigation.
+- Add persistent run history and audit tracking.
+- Expand configurable matching strategies.
+- Add more data sources and file formats.
+- Introduce additional quality and anomaly rules.
+- Improve large-dataset processing.
+- Add more detailed dashboard drill-down capabilities.
 
-\- The current implementation uses transaction references as the primary matching key.
+## 17. Project Purpose
 
-
-
-\## 12. Future Improvements
-
-
-
-\- Secondary matching using amount, account, merchant, and transaction date.
-
-\- Date normalization and date-tolerance rules.
+LedgerFlow was developed as a practical Data Engineering project to demonstrate data ingestion, transformation, validation, duplicate handling, anomaly detection, reconciliation, automated testing, reporting, and dashboard development using Python.d date-tolerance rules.
 
 \- Automated test coverage.
 

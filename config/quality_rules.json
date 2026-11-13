@@ -1,0 +1,90 @@
+
+{
+  "project": "LedgerFlow",
+  "currency": "USD",
+  "date_settings": {
+    "slash_date_format": "%m/%d/%Y",
+    "bank_posting_tolerance_days": 3
+  },
+  "normalization": {
+    "trim_whitespace": true,
+    "normalize_categories": true,
+    "normalize_transaction_ids": true
+  },
+  "validation_rules": [
+    {
+      "name": "missing_transaction_id",
+      "field": "txn_id",
+      "check": "not_null",
+      "severity": "ERROR"
+    },
+    {
+      "name": "missing_account_id",
+      "field": "account_id",
+      "check": "not_null",
+      "severity": "WARNING"
+    },
+    {
+      "name": "missing_transaction_date",
+      "field": "txn_date",
+      "check": "not_null",
+      "severity": "ERROR"
+    },
+    {
+      "name": "invalid_transaction_date",
+      "field": "txn_date",
+      "check": "valid_date",
+      "severity": "ERROR"
+    },
+    {
+      "name": "invalid_amount",
+      "field": "amount",
+      "check": "valid_decimal",
+      "severity": "ERROR"
+    },
+    {
+      "name": "unsupported_currency",
+      "field": "currency",
+      "check": "supported_currency",
+      "severity": "ERROR"
+    },
+    {
+      "name": "missing_category",
+      "field": "category",
+      "check": "not_null",
+      "severity": "WARNING"
+    }
+  ],
+  "duplicate_settings": {
+    "exact_duplicates": "REMOVE_EXTRA_COPIES",
+    "conflicting_duplicates": "INVESTIGATE"
+  },
+  "severity_actions": {
+    "ERROR": "REJECT",
+    "WARNING": "FLAG"
+  },
+  "anomaly_settings": {
+    "reference_date": "2024-12-31",
+    "rules": [
+      {
+        "name": "high_value_transaction",
+        "check": "amount_above",
+        "threshold": "10000.00",
+        "severity": "WARNING",
+        "description": "Transaction amount exceeds the configured high-value threshold."
+      },
+      {
+        "name": "future_dated_transaction",
+        "check": "date_after",
+        "severity": "WARNING",
+        "description": "Transaction date is later than the configured reference date."
+      },
+      {
+        "name": "weekend_transaction",
+        "check": "weekend_date",
+        "severity": "WARNING",
+        "description": "Transaction occurred on a Saturday or Sunday."
+      }
+    ]
+  }
+}
